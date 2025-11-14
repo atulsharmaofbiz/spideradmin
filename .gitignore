@@ -1,0 +1,41 @@
+# Node / JS
+node_modules/
+dist/
+build/
+.vite/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-lock.yaml
+package-lock.json
+
+# Environment / secrets
+.env
+.env.local
+.env.*.local
+.local/
+
+# IDEs / OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# System / logs
+*.log
+
+# Mac
+.DS_Store
+
+# Optional: generated files
+coverage/
+*.tgz
+
+# Editor swap files
+*~
+*.swp
+
+# TypeScript cache
+.tsbuildinfo
