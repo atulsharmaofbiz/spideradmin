@@ -11,28 +11,28 @@ export const ROUTES = {
   configuration: [
     {
       key: "disabled-domains",
-      label: "View/Add/Delete Disabled Domains",
+      label: "Disabled Domains",
       icon: Hash,
       component: ScopeSetPanel,
       props: { title: "Disabled Domains", listPath: "/api/public/disabled-domains", addPath: "/api/public/disabled-domains", delPath: "/api/public/disabled-domains", keyFormat: "suffix", transport: "query" }
     },
     {
       key: "json-cache",
-      label: "View/Add/Delete Disable JSON Hashcode Caching",
+      label: "Disable JSON Hashcode Caching",
       icon: FileText,
       component: ScopeSetPanel,
       props: { title: "Disable JSON Hashcode Caching", listPath: "/api/public/disable-json-hashcode", addPath: "/api/public/disable-json-hashcode", delPath: "/api/public/disable-json-hashcode", keyFormat: "prefix", transport: "query" }
     },
     {
       key: "file-cache",
-      label: "View/Add/Delete File Caching",
+      label: "File Caching",
       icon: FileText,
       component: ScopeSetPanel,
       props: { title: "Disable File Caching", listPath: "/api/public/disable-file-caching", addPath: "/api/public/disable-file-caching", delPath: "/api/public/disable-file-caching", keyFormat: "domain", supportsEntity: false, transport: "query" }
     },
     {
       key: "muted-patterns",
-      label: "View/Add/Delete Muted Alert Patterns",
+      label: "Muted Alert Patterns",
       icon: ShieldAlert,
       component: MutedPatternsPanel
     }
