@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
-import { ROUTES } from "@/sitemap";
+import { ROUTES } from "@/spideradmin";
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<string>(ROUTES.configuration[0].key);
