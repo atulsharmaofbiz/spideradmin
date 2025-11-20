@@ -17,7 +17,6 @@ export default function MetricsPanel() {
       const res = await fetch("/api/public/metrics/ba-source-domain-count");
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      // Expecting array of objects with keys Domain, Source Count, BA Count
       setRows(Array.isArray(data) ? data : []);
     } catch (e: any) {
       console.error("Failed to load metrics", e);
@@ -57,16 +56,24 @@ export default function MetricsPanel() {
                   <th className="py-2 pr-4">Domain</th>
                   <th className="py-2 pr-4">Source Count</th>
                   <th className="py-2 pr-4">BA Count</th>
+                  <th className="py-2 pr-4">% Difference</th>
                 </tr>
               </thead>
               <tbody>
-                {rows.map((r, i) => (
-                  <tr key={i} className="border-t">
-                    <td className="py-2 font-medium">{r.Domain}</td>
-                    <td className="py-2">{r["Source Count"]}</td>
-                    <td className="py-2">{r["BA Count"]}</td>
-                  </tr>
-                ))}
+                {rows.map((r, i) => {
+                  const diff = Math.abs(r["Source Count"] - r["BA Count"]);
+                  const total = r["Source Count"] + r["BA Count"];
+                  const pct = total > 0 ? ((diff / total) * 100).toFixed(2) : "0.00";
+
+                  return (
+                    <tr key={i} className="border-t">
+                      <td className="py-2 font-medium">{r.Domain}</td>
+                      <td className="py-2">{r["Source Count"]}</td>
+                      <td className="py-2">{r["BA Count"]}</td>
+                      <td className="py-2 font-semibold">{pct}%</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

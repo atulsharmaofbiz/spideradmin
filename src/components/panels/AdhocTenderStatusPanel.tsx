@@ -68,7 +68,7 @@ export default function AdhocTenderStatusPanel() {
           <div className="grid gap-1">
             <Label>Source Tender IDs (one per line)</Label>
             <textarea
-              className="border rounded-xl p-2 text-sm"
+              className="border rounded-xl p-2 text-sm bg-white text-black"
               rows={6}
               placeholder="T12345&#10;T67899&#10;GEM/12345"
               value={idsText}
