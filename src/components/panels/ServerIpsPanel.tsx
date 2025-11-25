@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Globe } from "lucide-react";
+import { apiGet } from "@/lib/api";
 
 type IpRow = { Instance: string; "IP Address": string; "Last Updated": string };
 
@@ -13,9 +14,7 @@ export default function ServerIpsPanel() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/public/servers/ip-addresses");
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
+      const data = await apiGet<IpRow[]>("/servers/ip-addresses");
       setRows(Array.isArray(data) ? data : []);
     } catch (e: any) {
       console.error("Failed to load server IPs", e);

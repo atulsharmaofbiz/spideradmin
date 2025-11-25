@@ -17,7 +17,7 @@ export default function IrepsOtpPanel() {
   const load = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/public/ireps/otp");
+      const res = await fetch("/bff/ireps/otp");
       if (!res.ok) throw new Error(`${res.status}`);
       const data: Record<string, string> = await res.json();
       setRows(Object.entries(data).map(([m, o]) => ({ mobile: m, otp: o })));
@@ -36,7 +36,7 @@ export default function IrepsOtpPanel() {
     setMsg(null);
     try {
       const qs = new URLSearchParams({ mobile, otp });
-      const res = await fetch(`/api/public/ireps/otp?${qs}`, { method: "PUT" });
+      const res = await fetch(`/bff/ireps/otp?${qs}`, { method: "PUT" });
       if (!res.ok) throw new Error(await res.text());
       setMobile(""); setOtp("");
       await load();

@@ -27,7 +27,7 @@ export default function ProviderCrawlPanel() {
     setLoading(true);
     try {
       const qs = new URLSearchParams({ provider: provider.trim(), entity, group: group || "", instance });
-      const res = await fetch(`/api/public/inject-provider?${qs.toString()}`, { method: "POST" });
+      const res = await fetch(`/bff/inject-provider?${qs.toString()}`, { method: "POST" });
       if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
       const data = await res.json();
       if (data && typeof data === "object") {
@@ -50,7 +50,7 @@ export default function ProviderCrawlPanel() {
           <div className="p-2 border rounded-xl"><BugPlay className="w-5 h-5"/></div>
           <div>
             <h3 className="text-lg font-semibold">Inject Provider Crawl Task</h3>
-            <p className="text-xs text-muted-foreground">Force-run a provider crawling job (calls /api/public/inject-provider)</p>
+            <p className="text-xs text-muted-foreground">Force-run a provider crawling job (calls /inject-provider)</p>
           </div>
         </div>
 

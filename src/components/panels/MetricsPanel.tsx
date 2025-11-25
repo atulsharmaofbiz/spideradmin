@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Activity } from "lucide-react";
+import { apiGet } from "@/lib/api";
 
 type Row = { Domain: string; "Source Count": number; "BA Count": number };
 
@@ -14,9 +15,7 @@ export default function MetricsPanel() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/public/metrics/ba-source-domain-count");
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
+      const data = await apiGet("/metrics/ba-source-domain-count");
       setRows(Array.isArray(data) ? data : []);
     } catch (e: any) {
       console.error("Failed to load metrics", e);

@@ -31,7 +31,7 @@ export default function AdhocTenderStatusPanel() {
     setLoading(true);
     try {
       const qs = new URLSearchParams({ domain: domain.trim() });
-      const res = await fetch(`/api/public/inject-adhoc-tender-status?${qs}`, {
+      const res = await fetch(`/bff/inject-adhoc-tender-status?${qs}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(list)

@@ -56,7 +56,7 @@ export default function AdminDashboard() {
       </header>
 
       <section className="pt-4">
-        {ActiveComp ? <ActiveComp {...activeProps} /> : <div>Select an option from the menu above.</div>}
+        {ActiveComp ? <ActiveComp key={route.key} {...activeProps} /> : <div>Select an option from the menu above.</div>}
       </section>
     </motion.div>
   );
