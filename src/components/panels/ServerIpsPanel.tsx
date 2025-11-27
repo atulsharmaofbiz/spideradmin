@@ -27,6 +27,20 @@ export default function ServerIpsPanel() {
 
   useEffect(() => { load(); }, []);
 
+  function formatTimestamp(ts: string) {
+  const d = new Date(ts.replace(" ", "T")); // ensure ISO-friendly format
+  if (isNaN(d.getTime())) return ts;        // fallback for invalid dates
+
+  return d.toLocaleString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+}
+
   return (
     <Card>
       <CardContent className="p-4 space-y-4">
@@ -55,7 +69,7 @@ export default function ServerIpsPanel() {
               <div key={i} className="border rounded-xl p-3 text-sm">
                 <div><span className="font-medium">Instance:</span> {r["Instance"]}</div>
                 <div><span className="font-medium">IP:</span> {r["IP Address"]}</div>
-                <div><span className="font-medium">Last Updated:</span> {r["Last Updated"]}</div>
+                <div><span className="font-medium">Last Updated:</span> {formatTimestamp(r["Last Updated"])}</div>
               </div>
             ))}
           </div>

@@ -60,19 +60,26 @@ export default function MetricsPanel() {
               </thead>
               <tbody>
                 {rows.map((r, i) => {
-                  const diff = Math.abs(r["Source Count"] - r["BA Count"]);
-                  const total = r["Source Count"] + r["BA Count"];
-                  const pct = total > 0 ? ((diff / total) * 100).toFixed(2) : "0.00";
+                  const diff = r["BA Count"] - r["Source Count"];
+                    const total = r["Source Count"] + r["BA Count"];
+                    const pct = total > 0 ? ((diff / total) * 100).toFixed(2) : "0.00";
 
-                  return (
-                    <tr key={i} className="border-t">
-                      <td className="py-2 font-medium">{r.Domain}</td>
-                      <td className="py-2">{r["Source Count"]}</td>
-                      <td className="py-2">{r["BA Count"]}</td>
-                      <td className="py-2 font-semibold">{pct}%</td>
-                    </tr>
-                  );
-                })}
+                return (
+                <tr key={i} className="border-t">
+                <td className="py-2 font-medium">{r.Domain}</td>
+                <td className="py-2">{r["Source Count"]}</td>
+                <td className="py-2">{r["BA Count"]}</td>
+                <td
+                  className={`py-2 font-semibold ${
+                  diff > 0 ? "text-green-600" : diff < 0 ? "text-red-600" : "text-muted-foreground"
+                }`}
+              >
+        {pct}%
+      </td>
+    </tr>
+  );
+})}
+
               </tbody>
             </table>
           </div>
