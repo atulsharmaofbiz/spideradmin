@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Globe } from "lucide-react";
+import { apiGet } from "@/lib/api";
 
 type IpRow = { Instance: string; "IP Address": string; "Last Updated": string };
 
@@ -13,9 +14,7 @@ export default function ServerIpsPanel() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/public/servers/ip-addresses");
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
+      const data = await apiGet<IpRow[]>("/servers/ip-addresses");
       setRows(Array.isArray(data) ? data : []);
     } catch (e: any) {
       console.error("Failed to load server IPs", e);
@@ -27,6 +26,20 @@ export default function ServerIpsPanel() {
   };
 
   useEffect(() => { load(); }, []);
+
+  function formatTimestamp(ts: string) {
+  const d = new Date(ts.replace(" ", "T")); // ensure ISO-friendly format
+  if (isNaN(d.getTime())) return ts;        // fallback for invalid dates
+
+  return d.toLocaleString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+}
 
   return (
     <Card>
@@ -56,7 +69,7 @@ export default function ServerIpsPanel() {
               <div key={i} className="border rounded-xl p-3 text-sm">
                 <div><span className="font-medium">Instance:</span> {r["Instance"]}</div>
                 <div><span className="font-medium">IP:</span> {r["IP Address"]}</div>
-                <div><span className="font-medium">Last Updated:</span> {r["Last Updated"]}</div>
+                <div><span className="font-medium">Last Updated:</span> {formatTimestamp(r["Last Updated"])}</div>
               </div>
             ))}
           </div>

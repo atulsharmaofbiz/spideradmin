@@ -8,8 +8,8 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      '/api/public': {
-        target: 'http://localhost:7071', // Spring Boot backend
+      "/bff": {
+        target: "http://localhost:4000",
         changeOrigin: true,
       },
     },

@@ -16,11 +16,11 @@ export default function MutedPatternsPanel() {
   const [pattern, setPattern] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const load = async () => { setLoading(true); try { const data = await http<string[]>('/api/public/alerts/mute-patterns'); setRows(Array.isArray(data) ? data : []); } catch { setRows([]); } finally { setLoading(false); } };
+  const load = async () => { setLoading(true); try { const data = await http<string[]>('/bff/alerts/mute-patterns'); setRows(Array.isArray(data) ? data : []); } catch { setRows([]); } finally { setLoading(false); } };
   useEffect(() => { load(); }, []);
 
-  const add = async () => { if (!pattern.trim()) return; const qs = new URLSearchParams({ pattern: pattern.trim() }); await fetch(`/api/public/alerts/mute-patterns?${qs}`, { method: 'POST' }); setPattern(''); await load(); };
-  const remove = async (p: string) => { const qs = new URLSearchParams({ pattern: p }); await fetch(`/api/public/alerts/mute-patterns?${qs}`, { method: 'DELETE' }); await load(); };
+  const add = async () => { if (!pattern.trim()) return; const qs = new URLSearchParams({ pattern: pattern.trim() }); await fetch(`bff/alerts/mute-patterns?${qs}`, { method: 'POST' }); setPattern(''); await load(); };
+  const remove = async (p: string) => { const qs = new URLSearchParams({ pattern: p }); await fetch(`/bff/alerts/mute-patterns?${qs}`, { method: 'DELETE' }); await load(); };
 
   return (
     <Card className="shadow-sm">

@@ -5,9 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:bff": "node server/index.cjs",
+    "dev:all": "concurrently \"npm run dev\" \"npm run dev:bff\"",
     "build": "tsc -b && vite build",
+    "preview": "vite preview",
     "lint": "eslint .",
-    "preview": "vite preview"
+
+    "start": "NODE_ENV=production node server/index.cjs",
+    "start:all": "npm run build && npm start",
+    "deploy:package": "node scripts/deploy.cjs"
   },
   "dependencies": {
     "@radix-ui/react-dropdown-menu": "^2.1.16",
@@ -18,7 +24,10 @@
     "@radix-ui/react-tabs": "^1.1.13",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
     "framer-motion": "^12.23.24",
+    "http-proxy-middleware": "^3.0.5",
     "lucide-react": "^0.553.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
@@ -27,17 +36,21 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",
-    "@types/node": "^24.6.0",
+    "@types/express": "^5.0.5",
+    "@types/http-proxy-middleware": "^0.19.3",
+    "@types/node": "^24.10.1",
     "@types/react": "^19.1.16",
     "@types/react-dom": "^19.1.9",
     "@vitejs/plugin-react": "^5.0.4",
     "autoprefixer": "^10.4.21",
+    "concurrently": "^9.2.1",
     "eslint": "^9.36.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.22",
     "globals": "^16.4.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.13",
+    "ts-node-dev": "^2.0.0",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.45.0",
     "vite": "^7.1.7"
