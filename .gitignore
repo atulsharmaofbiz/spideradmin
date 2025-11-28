@@ -1,4 +1,6 @@
 # Node / JS dependencies
+spideradmin-deploy.tar.gz
+deploy/
 node_modules/
 dist/
 build/

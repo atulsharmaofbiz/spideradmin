@@ -12,7 +12,8 @@
     "lint": "eslint .",
 
     "start": "NODE_ENV=production node server/index.cjs",
-    "start:all": "npm run build && npm start"
+    "start:all": "npm run build && npm start",
+    "deploy:package": "node scripts/deploy.cjs"
   },
   "dependencies": {
     "@radix-ui/react-dropdown-menu": "^2.1.16",
