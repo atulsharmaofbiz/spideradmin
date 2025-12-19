@@ -61,8 +61,7 @@ export default function MetricsPanel() {
               <tbody>
                 {rows.map((r, i) => {
                   const diff = r["BA Count"] - r["Source Count"];
-                    const total = r["Source Count"] + r["BA Count"];
-                    const pct = total > 0 ? ((diff / total) * 100).toFixed(2) : "0.00";
+                  const pct = r["Source Count"] !== 0 ? ((diff / r["Source Count"]) * 100).toFixed(2) : "0.00";
 
                 return (
                 <tr key={i} className="border-t">
