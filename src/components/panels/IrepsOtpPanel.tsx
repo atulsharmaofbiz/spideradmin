@@ -8,8 +8,6 @@ import { Smartphone } from "lucide-react";
 type IrepsRow = {
   mobile: string;
   otp: string;
-  lastUpdated?: string;
-  failed?: boolean;
 };
 
 export default function IrepsOtpPanel() {
@@ -25,39 +23,13 @@ export default function IrepsOtpPanel() {
     try {
       const res = await fetch("/bff/ireps/otp");
       if (!res.ok) throw new Error(`${res.status}`);
-      const data: Record<string, any> = await res.json();
+      const data: Record<string, string> = await res.json();
 
       const mapped: IrepsRow[] = Object.entries(data || {}).map(
-        ([mobileKey, value]) => {
-          if (typeof value === "string") {
-            return { mobile: mobileKey, otp: value };
-          }
-
-          const otp = value?.otp ?? "";
-          const failed = value?.failed ?? false;
-          let lastUpdated: string | undefined;
-
-          if (value?.lastUpdated) {
-  const ts = Number(value.lastUpdated);
-  if (!Number.isNaN(ts)) {
-    lastUpdated = new Date(ts).toLocaleString(undefined, {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  }
-}
-
-
-          return {
-            mobile: mobileKey,
-            otp,
-            failed,
-            lastUpdated,
-          };
-        }
+        ([mobileKey, otpValue]) => ({
+          mobile: mobileKey,
+          otp: otpValue,
+        })
       );
 
       setRows(mapped);
@@ -75,18 +47,26 @@ export default function IrepsOtpPanel() {
   }, []);
 
   const update = async () => {
-    if (!mobile || !otp) return setMsg("mobile and otp are required");
+    if (!mobile || !otp) {
+      setMsg("mobile and otp are required");
+      return;
+    }
+
     setMsg(null);
+    setLoading(true);
     try {
       const qs = new URLSearchParams({ mobile, otp });
       const res = await fetch(`/bff/ireps/otp?${qs}`, { method: "PUT" });
       if (!res.ok) throw new Error(await res.text());
+
       setMobile("");
       setOtp("");
       await load();
       setMsg("OTP updated");
     } catch (e: any) {
-      setMsg(typeof e === "string" ? e : e.message || "Error updating OTP");
+      setMsg(e?.message || "Error updating OTP");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -105,6 +85,7 @@ export default function IrepsOtpPanel() {
           </div>
         </div>
 
+        {/* Update form */}
         <div className="flex gap-3 items-end">
           <div className="grid gap-1">
             <Label>Mobile</Label>
@@ -135,6 +116,7 @@ export default function IrepsOtpPanel() {
           </div>
         )}
 
+        {/* List */}
         {loading ? (
           <div className="text-sm text-muted-foreground border rounded-xl p-6 text-center">
             Loading...
@@ -143,23 +125,14 @@ export default function IrepsOtpPanel() {
           <div className="grid gap-2">
             {rows.map((r, i) => (
               <div
-  key={i}
-  className="border rounded-xl p-2 text-sm flex justify-between items-center"
->
-  <div>
-    <div className="font-medium">{r.mobile}</div>
-    {r.lastUpdated && (
-      <div className="text-[11px] text-muted-foreground">
-        Last updated: {r.lastUpdated}
-      </div>
-    )}
-  </div>
-  <div className="text-right">
-    <div className="text-xs text-muted-foreground">
-      OTP: {r.otp || "-"}
-    </div>
-  </div>
-</div>
+                key={i}
+                className="border rounded-xl p-2 text-sm flex justify-between items-center"
+              >
+                <div className="font-medium">{r.mobile}</div>
+                <div className="text-xs text-muted-foreground">
+                  OTP: {r.otp}
+                </div>
+              </div>
             ))}
           </div>
         ) : (
