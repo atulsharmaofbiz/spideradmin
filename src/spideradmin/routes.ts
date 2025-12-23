@@ -1,4 +1,4 @@
-import { Hash, FileText, ShieldAlert, BugPlay, Database, Smartphone, Globe, Activity } from "lucide-react";
+import { Hash, FileText, ShieldAlert, BugPlay, Database, Smartphone, Globe, Activity,BarChart3,LineChart } from "lucide-react";
 import ScopeSetPanel from "@/components/panels/ScopeSetPanel";
 import MutedPatternsPanel from "@/components/panels/MutedAlertsPanel";
 import ProviderCrawlPanel from "@/components/panels/ProviderCrawlPanel";
@@ -6,6 +6,8 @@ import AdhocTenderStatusPanel from "@/components/panels/AdhocTenderStatusPanel";
 import IrepsOtpPanel from "@/components/panels/IrepsOtpPanel";
 import ServerIpsPanel from "@/components/panels/ServerIpsPanel";
 import MetricsPanel from "@/components/panels/MetricsPanel";
+import GemStatPanel from "@/components/panels/GemStatsPanel";
+import EprocurePanel from "@/components/panels/EprocureStatsPanel";
 
 export const ROUTES = {
   configuration: [
@@ -68,6 +70,8 @@ export const ROUTES = {
 
   monitoring: [
     { key: "server-ips", label: "View Current IP Addresses", icon: Globe, component: ServerIpsPanel },
-    { key: "ba-source", label: "View BA vs Source-Wise Domain Count", icon: Activity, component: MetricsPanel }
+    { key: "ba-source", label: "View BA vs Source-Wise Domain Count", icon: Activity, component: MetricsPanel },
+    { key: "gem-stats",label: "GeM Crawl Statistics",icon: BarChart3,component: GemStatPanel },
+    { key: "eprocure-stats",label: "eProcure Crawl Statistics",icon: LineChart,component: EprocurePanel}
   ]
 };
