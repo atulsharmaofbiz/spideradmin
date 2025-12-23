@@ -41,25 +41,49 @@ export default function EprocurePanel() {
 
   // Parse DD-MMM-YYYY safely
   const parseDate = (d: string) => {
-    const [dd, mon, yyyy] = d.split("-");
-    return new Date(`${dd} ${mon} ${yyyy}`).getTime();
+  if (!d) return 0;
+
+  const parts = d.split("-");
+  if (parts.length !== 3) return 0;
+
+  const [ddStr, monStr, yyyyStr] = parts;
+
+  const day = Number(ddStr);
+  const year = Number(yyyyStr);
+
+  const months: Record<string, number> = {
+    Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5,
+    Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11
   };
 
+  const month = months[monStr];
+
+  if (!day || month === undefined || !year) return 0;
+
+  return new Date(year, month, day).getTime();
+};
+
   // Extract only date part (remove time)
-  const onlyDate = (val?: string) =>
-  val
-    ? new Date(val).toLocaleDateString("en-US", {
-        month: "short",
-        day: "2-digit",
-        year: "numeric"
-      })
-    : "-";
+  const onlyDate = (val?: string) => {
+  if (!val) return "-";
+
+  const d = new Date(val);
+  if (isNaN(d.getTime())) return "-";
+
+  return d.toLocaleDateString("en-US", {
+    month: "short",
+    day: "2-digit",
+    year: "numeric"
+  });
+};
+
 
 
   // Filter + sort (most recent first)
   const filteredAndSortedRows = [...rows]
     .filter(r => {
       const rowTs = parseDate(r.date);
+      if (!rowTs) return false;
 
       const fromTs = fromDate
         ? new Date(fromDate).setHours(0, 0, 0, 0)
@@ -162,7 +186,7 @@ export default function EprocurePanel() {
               <tbody>
                 {filteredAndSortedRows.map((r, i) => (
                   <tr
-                    key={i}
+                    key={`${r.domain}-${r.stage}-${r.date}`}
                     className={`border-b last:border-0 hover:bg-muted/30 ${
                       r.tasksCreated === 0 ? "bg-red-50/40" : ""
                     }`}
