@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Activity } from "lucide-react";
+import { apiGet } from "@/lib/api";
 
 type Row = { Domain: string; "Source Count": number; "BA Count": number };
 
@@ -14,10 +15,7 @@ export default function MetricsPanel() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/public/metrics/ba-source-domain-count");
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      // Expecting array of objects with keys Domain, Source Count, BA Count
+      const data = await apiGet("/metrics/ba-source-domain-count");
       setRows(Array.isArray(data) ? data : []);
     } catch (e: any) {
       console.error("Failed to load metrics", e);
@@ -57,16 +55,30 @@ export default function MetricsPanel() {
                   <th className="py-2 pr-4">Domain</th>
                   <th className="py-2 pr-4">Source Count</th>
                   <th className="py-2 pr-4">BA Count</th>
+                  <th className="py-2 pr-4">% Difference</th>
                 </tr>
               </thead>
               <tbody>
-                {rows.map((r, i) => (
-                  <tr key={i} className="border-t">
-                    <td className="py-2 font-medium">{r.Domain}</td>
-                    <td className="py-2">{r["Source Count"]}</td>
-                    <td className="py-2">{r["BA Count"]}</td>
-                  </tr>
-                ))}
+                {rows.map((r, i) => {
+                  const diff = r["BA Count"] - r["Source Count"];
+                  const pct = r["Source Count"] !== 0 ? ((diff / r["Source Count"]) * 100).toFixed(2) : "0.00";
+
+                return (
+                <tr key={i} className="border-t">
+                <td className="py-2 font-medium">{r.Domain}</td>
+                <td className="py-2">{r["Source Count"]}</td>
+                <td className="py-2">{r["BA Count"]}</td>
+                <td
+                  className={`py-2 font-semibold ${
+                  diff > 0 ? "text-green-600" : diff < 0 ? "text-red-600" : "text-muted-foreground"
+                }`}
+              >
+        {pct}%
+      </td>
+    </tr>
+  );
+})}
+
               </tbody>
             </table>
           </div>
