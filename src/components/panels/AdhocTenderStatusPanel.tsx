@@ -12,42 +12,48 @@ export default function AdhocTenderStatusPanel() {
   const [loading, setLoading] = useState(false);
 
   const submit = async () => {
-    setMsg(null);
+  setMsg(null);
 
-    const list = idsText
-      .split("\n")
-      .map((x) => x.trim())
-      .filter((x) => x.length > 0);
+  const list = idsText
+    .split("\n")
+    .map((x) => x.trim())
+    .filter((x) => x.length > 0);
 
-    if (!list.length) {
-      setMsg("Enter at least one sourceTenderId");
-      return;
-    }
-    if (!domain.trim()) {
-      setMsg("Domain is required");
-      return;
-    }
+  if (!list.length) {
+    setMsg("Enter at least one sourceTenderId");
+    return;
+  }
 
-    setLoading(true);
-    try {
-      const qs = new URLSearchParams({ domain: domain.trim() });
-      const res = await fetch(`/bff/inject-adhoc-tender-status?${qs}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(list)
-      });
+  if (!domain.trim()) {
+    setMsg("Domain is required");
+    return;
+  }
 
-      const text = await res.text();
+  setLoading(true);
 
-      if (!res.ok) throw new Error(text);
+  try {
+    const qs = new URLSearchParams();
+    qs.append("domain", domain.trim());
+    list.forEach(id => qs.append("sourceTenderIds", id));
 
-      setMsg(text);
-    } catch (e: any) {
-      setMsg(e?.message || "Error calling server");
-    } finally {
-      setLoading(false);
-    }
-  };
+    const res = await fetch(`/bff/inject-adhoc-tender-status?${qs}`, {
+      method: "POST",
+      credentials: "include"
+    });
+
+    const text = await res.text();
+
+    if (!res.ok) throw new Error(text);
+
+    setMsg(text);
+
+  } catch (e: any) {
+    setMsg(e?.message || "Error calling server");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
     <Card>
@@ -70,7 +76,7 @@ export default function AdhocTenderStatusPanel() {
             <textarea
               className="border rounded-xl p-2 text-sm bg-white text-black"
               rows={6}
-              placeholder="T12345&#10;T67899&#10;GEM/12345"
+              placeholder="GEM/20XX/12XXX&#10;T67899&#10;GEM/12345"
               value={idsText}
               onChange={(e) => setIdsText(e.target.value)}
             />
