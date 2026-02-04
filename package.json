@@ -10,12 +10,12 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "lint": "eslint .",
-
     "start": "NODE_ENV=production node server/index.cjs",
     "start:all": "npm run build && npm start",
     "deploy:package": "node scripts/deploy.cjs"
   },
   "dependencies": {
+    "@radix-ui/react-avatar": "^1.1.11",
     "@radix-ui/react-dropdown-menu": "^2.1.16",
     "@radix-ui/react-label": "^2.1.8",
     "@radix-ui/react-select": "^2.2.6",

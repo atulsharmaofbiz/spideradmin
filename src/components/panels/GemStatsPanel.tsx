@@ -1,11 +1,21 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Activity, CheckCircle2, XCircle } from "lucide-react";
+import {
+  Activity,
+  CheckCircle2,
+  XCircle,
+  RefreshCw,
+  Calendar,
+  TrendingUp,
+  FileText,
+  Filter,
+  X,
+} from "lucide-react";
 import { apiGet } from "@/lib/api";
 
 type GemStat = {
-  task: string; // DD-MM-YYYY
+  task: string;
   fromDate: string;
   toDate: string;
   lastCompletionDate: number;
@@ -19,15 +29,33 @@ export default function GemStatPanel() {
   const [rows, setRows] = useState<GemStat[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [fromDate, setFromDate] = useState<string>("");
-  const [toDate, setToDate] = useState<string>("");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
 
+  // ---------------------------
+  // Safe Data Loader
+  // ---------------------------
   const load = async () => {
     setLoading(true);
     setError(null);
+
     try {
       const data = await apiGet("/metrics/gem-stats");
-      setRows(Array.isArray(data) ? data : []);
+
+      const safeRows: GemStat[] = Array.isArray(data)
+        ? data.map((r: any) => ({
+            task: r?.task ?? "",
+            fromDate: r?.fromDate ?? "",
+            toDate: r?.toDate ?? "",
+            lastCompletionDate: Number(r?.lastCompletionDate) || 0,
+            completed: Boolean(r?.completed),
+            totalPages: Number(r?.totalPages) || 0,
+            lastCrawledPageNo: Number(r?.lastCrawledPageNo) || 0,
+            resumable: Boolean(r?.resumable),
+          }))
+        : [];
+
+      setRows(safeRows);
     } catch (e: any) {
       setError(e?.message || "Failed to load GeM stats");
       setRows([]);
@@ -40,165 +68,254 @@ export default function GemStatPanel() {
     load();
   }, []);
 
-  // ✅ Date only (no time)
-  const fmtDateOnly = (ts?: number) =>
-  ts
-    ? new Date(ts).toLocaleDateString("en-US", {
+  // ---------------------------
+  // Safe Date Formatters
+  // ---------------------------
+  const fmtDateOnly = (ts?: number) => {
+    if (!ts || isNaN(ts)) return "-";
+
+    try {
+      return new Date(ts).toLocaleDateString("en-US", {
         month: "short",
         day: "2-digit",
-        year: "numeric"
+        year: "numeric",
+      });
+    } catch {
+      return "-";
+    }
+  };
+
+  const parseTaskDate = (d?: string) => {
+    if (!d || typeof d !== "string") return 0;
+
+    const parts = d.split("-");
+    if (parts.length !== 3) return 0;
+
+    const [dd, mm, yyyy] = parts.map(Number);
+    if (!dd || !mm || !yyyy) return 0;
+
+    return new Date(yyyy, mm - 1, dd).getTime();
+  };
+
+  // ---------------------------
+  // Filter + Sort
+  // ---------------------------
+  const filteredAndSortedRows = useMemo(() => {
+    return rows
+      .filter((r) => {
+        if (!r?.task) return false;
+
+        const taskTs = parseTaskDate(r.task);
+        if (!taskTs) return false;
+
+        const fromTs = fromDate
+          ? new Date(fromDate).setHours(0, 0, 0, 0)
+          : null;
+
+        const toTs = toDate
+          ? new Date(toDate).setHours(23, 59, 59, 999)
+          : null;
+
+        if (fromTs && taskTs < fromTs) return false;
+        if (toTs && taskTs > toTs) return false;
+
+        return true;
       })
-    : "-";
+      .sort((a, b) => parseTaskDate(b.task) - parseTaskDate(a.task));
+  }, [rows, fromDate, toDate]);
 
+  // ---------------------------
+  // Stats
+  // ---------------------------
+  const stats = useMemo(() => {
+    const total = filteredAndSortedRows.length;
 
-  const parseTaskDate = (d: string) => {
-  if (!d) return 0;
+    const completed = filteredAndSortedRows.filter(
+      (r) => r.completed
+    ).length;
 
-  const parts = d.split("-");
-  if (parts.length !== 3) return 0;
+    const totalPages = filteredAndSortedRows.reduce(
+      (sum, r) => sum + Number(r.totalPages || 0),
+      0
+    );
 
-  const [dd, mm, yyyy] = parts.map(Number);
-  if (!dd || !mm || !yyyy) return 0;
+    return { total, completed, totalPages };
+  }, [filteredAndSortedRows]);
 
-  return new Date(yyyy, mm - 1, dd).getTime();
-};
+  const completionRate =
+    stats.total > 0
+      ? ((stats.completed / stats.total) * 100).toFixed(1)
+      : "0";
 
-  const filteredAndSortedRows = [...rows]
-    .filter(r => {
-      const taskTs = parseTaskDate(r.task);
-      if (!taskTs) return false;
-
-      const fromTs = fromDate
-        ? new Date(fromDate).setHours(0, 0, 0, 0)
-        : null;
-
-      const toTs = toDate
-        ? new Date(toDate).setHours(23, 59, 59, 999)
-        : null;
-
-      if (fromTs && taskTs < fromTs) return false;
-      if (toTs && taskTs > toTs) return false;
-
-      return true;
-    })
-    .sort((a, b) => parseTaskDate(b.task) - parseTaskDate(a.task));
-
+  // ---------------------------
+  // UI
+  // ---------------------------
   return (
-    <Card>
-      <CardContent className="p-4 space-y-4">
+    <Card className="overflow-hidden border-0 shadow-lg bg-gradient-to-br from-white to-blue-50/30">
+      <CardContent className="p-6">
+
         {/* Header */}
-        <div className="flex gap-3 items-center">
-          <div className="p-2 border rounded-xl">
-            <Activity className="w-5 h-5" />
+        <div className="flex items-start gap-4 mb-6">
+          <div className="p-3 rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-600 shadow-lg">
+            <Activity className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold">GeM Crawl Statistics</h3>
-            <p className="text-xs text-muted-foreground">
+            <h3 className="text-xl font-bold text-blue-900">
+              GeM Crawl Statistics
+            </h3>
+            <p className="text-sm text-slate-500">
               Daily crawl execution summary
             </p>
           </div>
         </div>
 
-        {/* Toolbar */}
-        <div className="flex flex-wrap items-end justify-between gap-3 rounded-lg bg-muted/40 px-3 py-2">
-          <div className="flex items-end gap-3">
-            <div className="flex flex-col gap-1">
-              <label className="text-[11px] text-muted-foreground">From</label>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-3 gap-4 mb-6">
+          <StatCard
+            icon={<Calendar />}
+            label="Total Tasks"
+            value={stats.total}
+            sub="In selected range"
+          />
+
+          <StatCard
+            icon={<TrendingUp />}
+            label="Completion Rate"
+            value={`${completionRate}%`}
+            sub={`${stats.completed} of ${stats.total}`}
+          />
+
+          <StatCard
+            icon={<FileText />}
+            label="Total Pages"
+            value={stats.totalPages.toLocaleString()}
+            sub="Pages crawled"
+          />
+        </div>
+
+        {/* Filters */}
+        <div className="bg-slate-50 rounded-xl p-4 mb-6 border">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div className="flex items-center gap-3">
+              <Filter className="w-4 h-4 text-slate-600" />
+
               <input
                 type="date"
                 value={fromDate}
-                onChange={e => setFromDate(e.target.value)}
-                className="h-8 rounded-md border px-2 text-xs"
+                onChange={(e) => setFromDate(e.target.value)}
+                className="h-9 border rounded px-3 text-sm"
               />
-            </div>
 
-            <div className="flex flex-col gap-1">
-              <label className="text-[11px] text-muted-foreground">To</label>
               <input
                 type="date"
                 value={toDate}
-                onChange={e => setToDate(e.target.value)}
-                className="h-8 rounded-md border px-2 text-xs"
+                onChange={(e) => setToDate(e.target.value)}
+                className="h-9 border rounded px-3 text-sm"
               />
+
+              {(fromDate || toDate) && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setFromDate("");
+                    setToDate("");
+                  }}
+                >
+                  <X className="w-4 h-4 mr-1" />
+                  Clear
+                </Button>
+              )}
             </div>
 
-            {(fromDate || toDate) && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 px-2 text-xs"
-                onClick={() => {
-                  setFromDate("");
-                  setToDate("");
-                }}
-              >
-                Clear
-              </Button>
-            )}
+            <Button variant="outline" size="sm" onClick={load}>
+              <RefreshCw className="w-4 h-4 mr-1" />
+              Refresh
+            </Button>
           </div>
-
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8"
-            onClick={load}
-          >
-            Refresh
-          </Button>
         </div>
 
-        {error && <div className="text-sm text-red-600">{error}</div>}
+        {/* Error */}
+        {error && (
+          <div className="text-red-600 text-sm mb-4">{error}</div>
+        )}
 
+        {/* Table */}
         {loading ? (
-          <div className="text-sm text-muted-foreground text-center">
-            Loading...
+          <div className="text-center py-12 text-sm text-slate-500">
+            Loading statistics...
           </div>
-        ) : filteredAndSortedRows.length ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="text-xs text-muted-foreground border-b">
-                <tr>
-                  <th className="py-1.5 text-left">Task Date</th>
-                  <th className="py-1.5 text-right">Pages</th>
-                  <th className="py-1.5 text-center">Completed</th>
-                  <th className="py-1.5 text-left">Last Completion</th>
+        ) : filteredAndSortedRows.length > 0 ? (
+          <table className="w-full text-sm">
+            <thead className="border-b bg-slate-50">
+              <tr>
+                <th className="py-2 text-left">Task Date</th>
+                <th className="py-2 text-right">Pages</th>
+                <th className="py-2 text-center">Status</th>
+                <th className="py-2 text-left">Last Completion</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {filteredAndSortedRows.map((r) => (
+                <tr
+                  key={`${r.task}-${r.lastCompletionDate}`}
+                  className="border-b"
+                >
+                  <td className="py-2 font-semibold">{r.task}</td>
+
+                  <td className="py-2 text-right">
+                    {Number(r.totalPages || 0).toLocaleString()}
+                  </td>
+
+                  <td className="py-2 text-center">
+                    {r.completed ? (
+                      <CheckCircle2 className="text-green-600 w-4 h-4 inline" />
+                    ) : (
+                      <XCircle className="text-red-600 w-4 h-4 inline" />
+                    )}
+                  </td>
+
+                  <td className="py-2">
+                    {fmtDateOnly(r.lastCompletionDate)}
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {filteredAndSortedRows.map((r, i) => (
-                  <tr
-                    key={r.task}
-                    className={`border-b last:border-0 hover:bg-muted/30 ${
-                      !r.completed ? "bg-red-50/40" : ""
-                    }`}
-                  >
-                    <td className="py-1.5 font-medium">{r.task}</td>
-                    <td className="py-1.5 text-right font-mono">
-                      {r.totalPages}
-                    </td>
-                    <td className="py-1.5 text-center">
-                      <span className="inline-flex w-6 justify-center">
-                        {r.completed ? (
-                          <CheckCircle2 className="w-4 h-4 text-green-600" />
-                        ) : (
-                          <XCircle className="w-4 h-4 text-red-600" />
-                        )}
-                      </span>
-                    </td>
-                    <td className="py-1.5 text-muted-foreground">
-                      {fmtDateOnly(r.lastCompletionDate)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </table>
         ) : (
-          <div className="text-sm text-muted-foreground text-center">
-            No GeM stats available.
+          <div className="text-center py-12 text-sm text-slate-500">
+            No statistics available
           </div>
         )}
       </CardContent>
     </Card>
+  );
+}
+
+// ----------------------------------
+// Small reusable stat card
+// ----------------------------------
+function StatCard({
+  icon,
+  label,
+  value,
+  sub,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: React.ReactNode;
+  sub: string;
+}) {
+  return (
+    <div className="rounded-xl border p-4 bg-white shadow-sm">
+      <div className="flex items-center gap-2 text-xs text-slate-500 mb-1">
+        {icon}
+        {label}
+      </div>
+
+      <div className="text-2xl font-bold">{value}</div>
+      <div className="text-xs text-slate-500">{sub}</div>
+    </div>
   );
 }

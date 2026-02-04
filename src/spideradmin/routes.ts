@@ -11,67 +11,102 @@ import EprocurePanel from "@/components/panels/EprocureStatsPanel";
 
 export const ROUTES = {
   configuration: [
-  {
-    key: "disabled-domains",
+    {
+      key: "disabled-domains",
     label: "Disabled Domains",
-    icon: Hash,
-    component: ScopeSetPanel,
-    props: {
-      title: "Disabled Domains",
-      listPath: "/disabled-domains",
-      addPath: "/disabled-domains",
-      delPath: "/disabled-domains",
-      keyFormat: "suffix",
-      transport: "query",
+      icon: Hash,
+      component: ScopeSetPanel,
+      props: {
+        title: "Disabled Domains",
+        listPath: "/disabled-domains",
+        addPath: "/disabled-domains",
+        delPath: "/disabled-domains",
+        keyFormat: "suffix",
+        transport: "query",
+      },
     },
-  },
-  {
-    key: "json-cache",
-    label: "Disable JSON Hashcode Caching",
-    icon: FileText,
-    component: ScopeSetPanel,
-    props: {
-      title: "Disable JSON Hashcode Caching",
-      listPath: "/disable-json-hashcode",
-      addPath: "/disable-json-hashcode",
-      delPath: "/disable-json-hashcode",
-      keyFormat: "prefix",
-      transport: "query",
+    {
+      key: "json-cache",
+      label: "Disable JSON Cache",
+      icon: FileText,
+      component: ScopeSetPanel,
+      props: {
+        title: "Disable JSON Hashcode Caching",
+        listPath: "/disable-json-hashcode",
+        addPath: "/disable-json-hashcode",
+        delPath: "/disable-json-hashcode",
+        keyFormat: "prefix",
+        transport: "query",
+      },
     },
-  },
-  {
-    key: "file-cache",
+    {
+      key: "file-cache",
     label: "File Caching",
-    icon: FileText,
-    component: ScopeSetPanel,
-    props: {
-      title: "Disable File Caching",
-      listPath: "/disable-file-caching",
-      addPath: "/disable-file-caching",
-      delPath: "/disable-file-caching",
-      keyFormat: "domain",
-      supportsEntity: false,
-      transport: "query",
+      icon: FileText,
+      component: ScopeSetPanel,
+      props: {
+        title: "Disable File Caching",
+        listPath: "/disable-file-caching",
+        addPath: "/disable-file-caching",
+        delPath: "/disable-file-caching",
+        keyFormat: "domain",
+        supportsEntity: false,
+        transport: "query",
+      },
     },
-  },
-  {
+    {
       key: "muted-patterns",
-      label: "Muted Alert Patterns",
+      label: "Alert Mutes",
       icon: ShieldAlert,
-      component: MutedPatternsPanel
-    }
-],
+      component: MutedPatternsPanel,
+    },
+  ],
 
   utilities: [
-    { key: "provider-task", label: "Inject Provider Crawling Task", icon: BugPlay, component: ProviderCrawlPanel },
-    { key: "adhoc-task", label: "Add Adhoc Tender Status Task", icon: Database, component: AdhocTenderStatusPanel },
-    { key: "ireps-otp", label: "View/Update IREPS OTP", icon: Smartphone, component: IrepsOtpPanel }
+    {
+      key: "provider-task",
+      label: "Provider Crawl",
+      icon: BugPlay,
+      component: ProviderCrawlPanel,
+    },
+    {
+      key: "adhoc-task",
+      label: "Adhoc Status",
+      icon: Database,
+      component: AdhocTenderStatusPanel,
+    },
+    {
+      key: "ireps-otp",
+      label: "IREPS OTP",
+      icon: Smartphone,
+      component: IrepsOtpPanel,
+    },
   ],
 
   monitoring: [
-    { key: "server-ips", label: "View Current IP Addresses", icon: Globe, component: ServerIpsPanel },
-    { key: "ba-source", label: "View BA vs Source-Wise Domain Count", icon: Activity, component: MetricsPanel },
-    { key: "gem-stats",label: "GeM Crawl Statistics",icon: BarChart3,component: GemStatPanel },
-    { key: "eprocure-stats",label: "eProcure Crawl Statistics",icon: LineChart,component: EprocurePanel}
-  ]
+    {
+      key: "server-ips",
+      label: "Server IPs",
+      icon: Globe,
+      component: ServerIpsPanel,
+    },
+    {
+      key: "ba-source",
+      label: "Domain Metrics",
+      icon: Activity,
+      component: MetricsPanel,
+    },
+    {
+      key: "gem-stats",
+      label: "GeM Stats",
+      icon: BarChart3,
+      component: GemStatPanel,
+    },
+    {
+      key: "eprocure-stats",
+      label: "eProc Stats",
+      icon: LineChart,
+      component: EprocurePanel,
+    },
+  ],
 };
