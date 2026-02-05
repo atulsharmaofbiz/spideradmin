@@ -384,6 +384,7 @@ export default function ProviderCrawlPanel() {
   const [form, setForm] = useState<CrawlForm>({ group: "" });
   const [message, setMessage] = useState<UiMessage | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [cooldown, setCooldown] = useState(false);
 
   const { providers, loading: loadingProviders, error: providerError } = useProviders();
 
@@ -398,21 +399,28 @@ export default function ProviderCrawlPanel() {
   };
 
   const handleSubmit = async () => {
-    setMessage(null);
-    setSubmitting(true);
+  if (cooldown) return;
 
-    const result = await submitCrawlTask(form);
-    setMessage(result);
+  setMessage(null);
+  setSubmitting(true);
 
-    if (result.type === "success") {
-      setForm({ group: "" });
-    }
+  const result = await submitCrawlTask(form);
+  setMessage(result);
 
-    setSubmitting(false);
-  };
+  setSubmitting(false);
+
+  if (result.type === "success") {
+    setCooldown(true);
+
+    setTimeout(() => {
+      setCooldown(false);
+      setMessage(null);
+    }, 5000);
+  }
+};
 
   const isFormValid =
-    !!form.provider && !!form.entity && !!form.instance && !submitting;
+    !!form.provider && !!form.entity && !!form.instance && !submitting && !cooldown;
 
   return (
     <Card className="overflow-hidden border-0 shadow-lg bg-gradient-to-br from-white to-purple-50/30">
@@ -443,11 +451,12 @@ export default function ProviderCrawlPanel() {
           />
 
           {message && <MessageAlert message={message} />}
+          
 
           <div className="pt-2">
             <SubmitButton
               disabled={!isFormValid}
-              submitting={submitting}
+              submitting={submitting || cooldown}
               onClick={handleSubmit}
             />
           </div>
