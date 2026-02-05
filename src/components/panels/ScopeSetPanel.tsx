@@ -176,7 +176,9 @@ export default function ScopeSetPanel({
 
         {/* Add Domain Form */}
         <div className="mb-6 p-4 bg-gradient-to-r from-slate-50 to-indigo-50/30 rounded-xl border border-slate-200/60">
-          <div className="grid grid-cols-1 md:grid-cols-[2fr,1.5fr,auto] gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-[2fr,1.5fr,auto] gap-4 items-end">
+
+            {/* Domain */}
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
                 <Globe className="w-3.5 h-3.5" />
@@ -186,11 +188,12 @@ export default function ScopeSetPanel({
                 placeholder="example.gov.in"
                 value={domain}
                 onChange={(e) => setDomain(e.target.value)}
-                className="h-10 border-slate-300 focus:border-indigo-500 focus:ring-indigo-500/20"
                 onKeyDown={(e) => e.key === "Enter" && add()}
+                className="h-10 border-slate-300 focus:border-indigo-500 focus:ring-indigo-500/20"
               />
             </div>
 
+            {/* Entity Type */}
             {supportsEntity && (
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold text-slate-700 uppercase tracking-wide">
@@ -219,16 +222,18 @@ export default function ScopeSetPanel({
               </div>
             )}
 
+            {/* Button */}
             <div className="flex items-end">
               <Button
                 onClick={add}
                 disabled={!domain}
-                className="h-10 px-6 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg shadow-indigo-500/30 transition-all hover:shadow-xl hover:shadow-indigo-500/40 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="h-10 px-6 w-auto bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg shadow-indigo-500/30 transition-all hover:shadow-xl hover:shadow-indigo-500/40 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Add
               </Button>
             </div>
+
           </div>
         </div>
 
