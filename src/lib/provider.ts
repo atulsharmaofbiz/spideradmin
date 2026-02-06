@@ -27,10 +27,15 @@ export async function injectProvider(params: {
   instance: InstanceOpt;
   group?: string;
 }): Promise<{ ok: boolean; message?: string; error?: string }> {
-  const qs = new URLSearchParams(params);
+
+  const qs = buildParams({
+    ...params,
+    group: params.group ?? ""
+  });
 
   const res = await fetch(`/bff/inject-provider?${qs.toString()}`, {
     method: "POST",
+    credentials: "include"
   });
 
   if (!res.ok) {
@@ -49,3 +54,13 @@ export async function injectProvider(params: {
     error?: string;
   };
 }
+
+
+function buildParams(params: Record<string, string | undefined>) {
+  const qs = new URLSearchParams();
+  Object.entries(params).forEach(([k, v]) => {
+    if (v !== undefined) qs.append(k, v);
+  });
+  return qs;
+}
+

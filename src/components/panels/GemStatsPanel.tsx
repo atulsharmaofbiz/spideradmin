@@ -1,11 +1,23 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Activity, CheckCircle2, XCircle } from "lucide-react";
+import {
+  Activity,
+  CheckCircle2,
+  XCircle,
+  RefreshCw,
+  Calendar,
+  TrendingUp,
+  FileText,
+  Filter,
+  X,
+} from "lucide-react";
 import { apiGet } from "@/lib/api";
 
+// TYPES
+
 type GemStat = {
-  task: string; // DD-MM-YYYY
+  task: string;
   fromDate: string;
   toDate: string;
   lastCompletionDate: number;
@@ -15,22 +27,186 @@ type GemStat = {
   resumable: boolean;
 };
 
-export default function GemStatPanel() {
-  const [rows, setRows] = useState<GemStat[]>([]);
+type DateRange = {
+  from: string;
+  to: string;
+};
+
+type StatsData = {
+  total: number;
+  completed: number;
+  totalPages: number;
+  completionRate: string;
+};
+
+// DATE UTILITIES
+
+/**
+ * Parses task date string in DD-MM-YYYY format
+ * @returns timestamp in milliseconds, or null if invalid
+ */
+function parseTaskDate(dateString: string): number | null {
+  if (!dateString || typeof dateString !== "string") {
+    return null;
+  }
+
+  const parts = dateString.split("-");
+  if (parts.length !== 3) {
+    return null;
+  }
+
+  const [day, month, year] = parts.map(Number);
+
+  if (!day || !month || !year || day > 31 || month > 12) {
+    return null;
+  }
+
+  const date = new Date(year, month - 1, day);
+
+  // Validate the date is actually valid (no Feb 30, etc)
+  if (
+    date.getDate() !== day ||
+    date.getMonth() !== month - 1 ||
+    date.getFullYear() !== year
+  ) {
+    return null;
+  }
+
+  return date.getTime();
+}
+
+function formatDate(timestamp: number): string {
+  if (timestamp == null || typeof timestamp !== "number") {
+    return "-";
+  }
+
+  return new Date(timestamp).toLocaleDateString("en-US", {
+    month: "short",
+    day: "2-digit",
+    year: "numeric",
+  });
+}
+
+function getDateRangeBounds(range: DateRange): {
+  fromTimestamp: number | null;
+  toTimestamp: number | null;
+} {
+  const fromTimestamp = range.from
+    ? new Date(range.from).setHours(0, 0, 0, 0)
+    : null;
+
+  const toTimestamp = range.to
+    ? new Date(range.to).setHours(23, 59, 59, 999)
+    : null;
+
+  return { fromTimestamp, toTimestamp };
+}
+
+// DATA TRANSFORMATION
+
+function normalizeGemStat(raw: any): GemStat {
+  return {
+    task: raw?.task ?? "",
+    fromDate: raw?.fromDate ?? "",
+    toDate: raw?.toDate ?? "",
+    lastCompletionDate: Number(raw?.lastCompletionDate) || 0,
+    completed: Boolean(raw?.completed),
+    totalPages: Number(raw?.totalPages) || 0,
+    lastCrawledPageNo: Number(raw?.lastCrawledPageNo) || 0,
+    resumable: Boolean(raw?.resumable),
+  };
+}
+
+// FILTERING & SORTING
+
+function isTaskInDateRange(
+  task: GemStat,
+  fromTimestamp: number | null,
+  toTimestamp: number | null
+): boolean {
+  if (!task.task) {
+    return false;
+  }
+
+  const taskTimestamp = parseTaskDate(task.task);
+  if (taskTimestamp == null) {
+    return false;
+  }
+
+  if (fromTimestamp != null && taskTimestamp < fromTimestamp) {
+    return false;
+  }
+
+  if (toTimestamp != null && taskTimestamp > toTimestamp) {
+    return false;
+  }
+
+  return true;
+}
+
+function sortTasksByDateDesc(tasks: GemStat[]): GemStat[] {
+  return [...tasks].sort((a, b) => {
+    const tsA = parseTaskDate(a.task) ?? 0;
+    const tsB = parseTaskDate(b.task) ?? 0;
+    return tsB - tsA;
+  });
+}
+
+function filterAndSortTasks(
+  tasks: GemStat[],
+  dateRange: DateRange
+): GemStat[] {
+  const { fromTimestamp, toTimestamp } = getDateRangeBounds(dateRange);
+
+  const filtered = tasks.filter((task) =>
+    isTaskInDateRange(task, fromTimestamp, toTimestamp)
+  );
+
+  return sortTasksByDateDesc(filtered);
+}
+
+// STATISTICS
+
+function calculateStats(tasks: GemStat[]): StatsData {
+  const total = tasks.length;
+  const completed = tasks.filter((t) => t.completed).length;
+  const totalPages = tasks.reduce((sum, t) => sum + t.totalPages, 0);
+
+  const completionRate =
+    total > 0 ? ((completed / total) * 100).toFixed(1) : "0";
+
+  return { total, completed, totalPages, completionRate };
+}
+
+// API
+
+async function fetchGemStats(): Promise<GemStat[]> {
+  const data = await apiGet<any[]>("/metrics/gem-stats");
+
+  if (!Array.isArray(data)) {
+    return [];
+  }
+
+  return data.map(normalizeGemStat);
+}
+
+// HOOKS
+
+function useGemStats() {
+  const [stats, setStats] = useState<GemStat[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [fromDate, setFromDate] = useState<string>("");
-  const [toDate, setToDate] = useState<string>("");
 
   const load = async () => {
     setLoading(true);
     setError(null);
+
     try {
-      const data = await apiGet("/metrics/gem-stats");
-      setRows(Array.isArray(data) ? data : []);
+      const data = await fetchGemStats();
+      setStats(data);
     } catch (e: any) {
       setError(e?.message || "Failed to load GeM stats");
-      setRows([]);
+      setStats([]);
     } finally {
       setLoading(false);
     }
@@ -40,163 +216,240 @@ export default function GemStatPanel() {
     load();
   }, []);
 
-  // ✅ Date only (no time)
-  const fmtDateOnly = (ts?: number) =>
-  ts
-    ? new Date(ts).toLocaleDateString("en-US", {
-        month: "short",
-        day: "2-digit",
-        year: "numeric"
-      })
-    : "-";
+  return { stats, loading, error, reload: load };
+}
 
+// UI COMPONENTS
 
-  const parseTaskDate = (d: string) => {
-  if (!d) return 0;
+function StatCard({
+  icon,
+  label,
+  value,
+  subtitle,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: React.ReactNode;
+  subtitle: string;
+}) {
+  return (
+    <div className="rounded-xl border p-4 bg-white shadow-sm">
+      <div className="flex items-center gap-2 text-xs text-slate-500 mb-1">
+        {icon}
+        {label}
+      </div>
+      <div className="text-2xl font-bold">{value}</div>
+      <div className="text-xs text-slate-500">{subtitle}</div>
+    </div>
+  );
+}
 
-  const parts = d.split("-");
-  if (parts.length !== 3) return 0;
+function StatsOverview({ stats }: { stats: StatsData }) {
+  return (
+    <div className="grid grid-cols-3 gap-4 mb-6">
+      <StatCard
+        icon={<Calendar />}
+        label="Total Tasks"
+        value={stats.total}
+        subtitle="In selected range"
+      />
 
-  const [dd, mm, yyyy] = parts.map(Number);
-  if (!dd || !mm || !yyyy) return 0;
+      <StatCard
+        icon={<TrendingUp />}
+        label="Completion Rate"
+        value={`${stats.completionRate}%`}
+        subtitle={`${stats.completed} of ${stats.total}`}
+      />
 
-  return new Date(yyyy, mm - 1, dd).getTime();
-};
+      <StatCard
+        icon={<FileText />}
+        label="Total Pages"
+        value={stats.totalPages.toLocaleString()}
+        subtitle="Pages crawled"
+      />
+    </div>
+  );
+}
 
-  const filteredAndSortedRows = [...rows]
-    .filter(r => {
-      const taskTs = parseTaskDate(r.task);
-      if (!taskTs) return false;
-
-      const fromTs = fromDate
-        ? new Date(fromDate).setHours(0, 0, 0, 0)
-        : null;
-
-      const toTs = toDate
-        ? new Date(toDate).setHours(23, 59, 59, 999)
-        : null;
-
-      if (fromTs && taskTs < fromTs) return false;
-      if (toTs && taskTs > toTs) return false;
-
-      return true;
-    })
-    .sort((a, b) => parseTaskDate(b.task) - parseTaskDate(a.task));
+function DateRangeFilter({
+  dateRange,
+  onRangeChange,
+  onClear,
+  onRefresh,
+}: {
+  dateRange: DateRange;
+  onRangeChange: (range: DateRange) => void;
+  onClear: () => void;
+  onRefresh: () => void;
+}) {
+  const hasActiveFilters = dateRange.from || dateRange.to;
 
   return (
-    <Card>
-      <CardContent className="p-4 space-y-4">
-        {/* Header */}
-        <div className="flex gap-3 items-center">
-          <div className="p-2 border rounded-xl">
-            <Activity className="w-5 h-5" />
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold">GeM Crawl Statistics</h3>
-            <p className="text-xs text-muted-foreground">
-              Daily crawl execution summary
-            </p>
-          </div>
+    <div className="bg-slate-50 rounded-xl p-4 mb-6 border">
+      <div className="flex items-center justify-between flex-wrap gap-4">
+        <div className="flex items-center gap-3">
+          <Filter className="w-4 h-4 text-slate-600" />
+
+          <input
+            type="date"
+            value={dateRange.from}
+            onChange={(e) =>
+              onRangeChange({ ...dateRange, from: e.target.value })
+            }
+            className="h-9 border rounded px-3 text-sm"
+          />
+
+          <input
+            type="date"
+            value={dateRange.to}
+            onChange={(e) =>
+              onRangeChange({ ...dateRange, to: e.target.value })
+            }
+            className="h-9 border rounded px-3 text-sm"
+          />
+
+          {hasActiveFilters && (
+            <Button variant="ghost" size="sm" onClick={onClear}>
+              <X className="w-4 h-4 mr-1" />
+              Clear
+            </Button>
+          )}
         </div>
 
-        {/* Toolbar */}
-        <div className="flex flex-wrap items-end justify-between gap-3 rounded-lg bg-muted/40 px-3 py-2">
-          <div className="flex items-end gap-3">
-            <div className="flex flex-col gap-1">
-              <label className="text-[11px] text-muted-foreground">From</label>
-              <input
-                type="date"
-                value={fromDate}
-                onChange={e => setFromDate(e.target.value)}
-                className="h-8 rounded-md border px-2 text-xs"
-              />
-            </div>
+        <Button variant="outline" size="sm" onClick={onRefresh}>
+          <RefreshCw className="w-4 h-4 mr-1" />
+          Refresh
+        </Button>
+      </div>
+    </div>
+  );
+}
 
-            <div className="flex flex-col gap-1">
-              <label className="text-[11px] text-muted-foreground">To</label>
-              <input
-                type="date"
-                value={toDate}
-                onChange={e => setToDate(e.target.value)}
-                className="h-8 rounded-md border px-2 text-xs"
-              />
-            </div>
+function TaskStatusIcon({ completed }: { completed: boolean }) {
+  return completed ? (
+    <CheckCircle2 className="text-green-600 w-4 h-4 inline" />
+  ) : (
+    <XCircle className="text-red-600 w-4 h-4 inline" />
+  );
+}
 
-            {(fromDate || toDate) && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 px-2 text-xs"
-                onClick={() => {
-                  setFromDate("");
-                  setToDate("");
-                }}
-              >
-                Clear
-              </Button>
-            )}
-          </div>
+function TaskTableRow({ task }: { task: GemStat }) {
+  return (
+    <tr className="border-b">
+      <td className="py-2 font-semibold">{task.task}</td>
+      <td className="py-2 text-right">
+        {task.totalPages.toLocaleString()}
+      </td>
+      <td className="py-2 text-center">
+        <TaskStatusIcon completed={task.completed} />
+      </td>
+      <td className="py-2">{formatDate(task.lastCompletionDate)}</td>
+    </tr>
+  );
+}
 
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8"
-            onClick={load}
-          >
-            Refresh
-          </Button>
-        </div>
+function TaskTable({ tasks }: { tasks: GemStat[] }) {
+  return (
+    <table className="w-full text-sm">
+      <thead className="border-b bg-slate-50">
+        <tr>
+          <th className="py-2 text-left">Task Date</th>
+          <th className="py-2 text-right">Pages</th>
+          <th className="py-2 text-center">Status</th>
+          <th className="py-2 text-left">Last Completion</th>
+        </tr>
+      </thead>
+      <tbody>
+        {tasks.map((task) => (
+          <TaskTableRow
+            key={`${task.task}-${task.lastCompletionDate}`}
+            task={task}
+          />
+        ))}
+      </tbody>
+    </table>
+  );
+}
 
-        {error && <div className="text-sm text-red-600">{error}</div>}
+function LoadingState() {
+  return (
+    <div className="text-center py-12 text-sm text-slate-500">
+      Loading statistics...
+    </div>
+  );
+}
+
+function EmptyState() {
+  return (
+    <div className="text-center py-12 text-sm text-slate-500">
+      No statistics available
+    </div>
+  );
+}
+
+function ErrorAlert({ message }: { message: string }) {
+  return <div className="text-red-600 text-sm mb-4">{message}</div>;
+}
+
+function PageHeader() {
+  return (
+    <div className="flex items-start gap-4 mb-6">
+      <div className="p-3 rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-600 shadow-lg">
+        <Activity className="w-6 h-6 text-white" />
+      </div>
+      <div>
+        <h3 className="text-xl font-bold text-blue-900">
+          GeM Crawl Statistics
+        </h3>
+        <p className="text-sm text-slate-500">Daily crawl execution summary</p>
+      </div>
+    </div>
+  );
+}
+
+// MAIN COMPONENT
+
+export default function GemStatPanel() {
+  const [dateRange, setDateRange] = useState<DateRange>({ from: "", to: "" });
+
+  const { stats: allStats, loading, error, reload } = useGemStats();
+
+  const filteredTasks = useMemo(
+    () => filterAndSortTasks(allStats, dateRange),
+    [allStats, dateRange]
+  );
+
+  const statsData = useMemo(
+    () => calculateStats(filteredTasks),
+    [filteredTasks]
+  );
+
+  const clearFilters = () => {
+    setDateRange({ from: "", to: "" });
+  };
+
+  return (
+    <Card className="overflow-hidden border-0 shadow-lg bg-gradient-to-br from-white to-blue-50/30">
+      <CardContent className="p-6">
+        <PageHeader />
+
+        <StatsOverview stats={statsData} />
+
+        <DateRangeFilter
+          dateRange={dateRange}
+          onRangeChange={setDateRange}
+          onClear={clearFilters}
+          onRefresh={reload}
+        />
+
+        {error && <ErrorAlert message={error} />}
 
         {loading ? (
-          <div className="text-sm text-muted-foreground text-center">
-            Loading...
-          </div>
-        ) : filteredAndSortedRows.length ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="text-xs text-muted-foreground border-b">
-                <tr>
-                  <th className="py-1.5 text-left">Task Date</th>
-                  <th className="py-1.5 text-right">Pages</th>
-                  <th className="py-1.5 text-center">Completed</th>
-                  <th className="py-1.5 text-left">Last Completion</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredAndSortedRows.map((r, i) => (
-                  <tr
-                    key={r.task}
-                    className={`border-b last:border-0 hover:bg-muted/30 ${
-                      !r.completed ? "bg-red-50/40" : ""
-                    }`}
-                  >
-                    <td className="py-1.5 font-medium">{r.task}</td>
-                    <td className="py-1.5 text-right font-mono">
-                      {r.totalPages}
-                    </td>
-                    <td className="py-1.5 text-center">
-                      <span className="inline-flex w-6 justify-center">
-                        {r.completed ? (
-                          <CheckCircle2 className="w-4 h-4 text-green-600" />
-                        ) : (
-                          <XCircle className="w-4 h-4 text-red-600" />
-                        )}
-                      </span>
-                    </td>
-                    <td className="py-1.5 text-muted-foreground">
-                      {fmtDateOnly(r.lastCompletionDate)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <LoadingState />
+        ) : filteredTasks.length > 0 ? (
+          <TaskTable tasks={filteredTasks} />
         ) : (
-          <div className="text-sm text-muted-foreground text-center">
-            No GeM stats available.
-          </div>
+          <EmptyState />
         )}
       </CardContent>
     </Card>
